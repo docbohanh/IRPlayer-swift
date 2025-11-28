@@ -60,7 +60,7 @@ public class IRGLView: UIView, IRFFDecoderVideoOutput {
     var mode: IRGLRenderMode?
     var modes: [IRGLRenderMode] = []
     var viewprotRange: CGRect = .zero
-    var aspect: CGFloat = 0.0 {
+    public var aspect: CGFloat = 0.0 {
         didSet {
             guard oldValue != aspect else { return }
             reloadViewFrame()

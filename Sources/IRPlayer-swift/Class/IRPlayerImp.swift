@@ -189,7 +189,7 @@ public class IRPlayerImp: NSObject {
         }
     }
 
-    var displayView: IRGLView?
+    public var displayView: IRGLView?
     private var decoderType: IRDecoderType?
     private var _avPlayer: IRAVPlayer?
     private var avPlayer: IRAVPlayer {
