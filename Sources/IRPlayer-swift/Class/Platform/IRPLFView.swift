@@ -7,4 +7,4 @@
 
 import UIKit
 
-public typealias IRPLFView = UIView
+public typealias IRPLFView = IRGLView
