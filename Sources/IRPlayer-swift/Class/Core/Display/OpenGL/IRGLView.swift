@@ -9,6 +9,12 @@ import UIKit
 import OpenGLES
 import QuartzCore
 
+// Protocol này để lắng nghe sự kiện khung hình đầu tiên được tạo
+//
+public protocol IRGLRenderViewDelegate: AnyObject {
+    func glViewDidRenderFirstFrame(_ view: IRGLView)
+}
+
 enum IRDisplayRendererType: UInt {
     case empty
     case AVPlayerLayer
@@ -18,6 +24,19 @@ enum IRDisplayRendererType: UInt {
 }
 
 public class IRGLView: UIView, IRFFDecoderVideoOutput {
+    
+    // --- [BẮT ĐẦU THÊM MỚI] ---
+    // 1. Thêm biến delegate
+    public weak var delegate: IRGLRenderViewDelegate?
+    
+    // 2. Thêm cờ đánh dấu đã render frame đầu hay chưa
+    private var hasRenderedFirstFrame: Bool = false
+    
+    // Hàm reset nếu bạn muốn tái sử dụng view cho video khác (tuỳ chọn)
+    public func resetFirstFrameFlag() {
+        hasRenderedFirstFrame = false
+    }
+    // --- [KẾT THÚC THÊM MỚI] ---
 
     var abstractPlayer: IRPlayerImp?
     var context: EAGLContext?
@@ -268,9 +287,32 @@ public class IRGLView: UIView, IRFFDecoderVideoOutput {
             currentProgram.clearBuffer()
             currentProgram.render()
             self.bindCurrentRenderBuffer()
-            _ = self.presentRenderBuffer()
+            let isRender = self.presentRenderBuffer()
+            if isRender {
+                markRenderFirstFrame()
+            }
             self.saveSnapShot()
         }
+    }
+    
+    // Đánh dấu khung hình đầu tiên được tạo thành công
+    private func markRenderFirstFrame() {
+        // --- [START] checkRenderFirstFrame ---
+        // 3. Kiểm tra và gọi delegate sau khi render xong
+        if !hasRenderedFirstFrame {
+            hasRenderedFirstFrame = true
+            
+            // Đảm bảo gọi delegate trên Main Thread vì thường dùng để update UI
+            if Thread.isMainThread {
+                self.delegate?.glViewDidRenderFirstFrame(self)
+            } else {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.delegate?.glViewDidRenderFirstFrame(self)
+                }
+            }
+        }
+        // --- [END] checkRenderFirstFrame ---
     }
 
     func setRenderModes(_ modes: [IRGLRenderMode]) {
@@ -392,7 +434,7 @@ public class IRGLView: UIView, IRFFDecoderVideoOutput {
     }
 
     func saveSnapshotAlbum(_ snapshot: UIImage) {
-        IRPhotoSaver.save(snapshot, toAlbum: "Snapshots")
+        IRPhotoSaver.save(snapshot, toAlbum: "IPCamSnapshots")
     }
 
     func createImageFromFramebuffer() -> UIImage {
